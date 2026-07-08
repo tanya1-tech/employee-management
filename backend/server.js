@@ -4,10 +4,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
 
 const app = express();
 
@@ -21,12 +17,12 @@ app.use(morgan('dev'));
 const authRoutes = require('./routes/auth.routes');
 const employeeRoutes = require('./routes/employee.routes');
 const attendanceRoutes = require('./routes/attendance.routes');
-const dashboardRoutes = require('./routes/dashboard.routes'); // ← ADD THIS
+const dashboardRoutes = require('./routes/dashboard.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/attendance', attendanceRoutes);
-app.use('/api/dashboard', dashboardRoutes); // ← ADD THIS
+app.use('/api/dashboard', dashboardRoutes);
 
 // Test route
 app.get('/api/test', (req, res) => {
@@ -46,10 +42,12 @@ mongoose.connect(MONGODB_URI, {
 })
 .catch(err => {
   console.log('⚠️ MongoDB connection failed:', err.message);
-  console.log('💡 Running with limited functionality');
+  console.log('💡 Running with limited functionality (no database)');
 });
 
+// ✅ ONLY ONE PORT DECLARATION
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Test API: http://localhost:${PORT}/api/test`);
