@@ -46,6 +46,7 @@ backend/*.log
 frontend/node_modules/
 frontend/package-lock.json
 frontend/dist/
+
 frontend/vercel.json
 
 frontend/build/
@@ -143,4 +144,3 @@ docker-compose*.yml
 *.map
 *.d.ts
 vercel.json
-./
