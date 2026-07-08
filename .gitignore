@@ -1,0 +1,142 @@
+# ============================================
+# NODE.js DEPENDENCIES
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ============================================
+# ENVIRONMENT VARIABLES (CRITICAL!)
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+*.env
+
+# ============================================
+# BUILD OUTPUTS
+# ============================================
+dist/
+build/
+out/
+*.tsbuildinfo
+*.turbo
+
+# ============================================
+# BACKEND SPECIFIC
+# ============================================
+backend/node_modules/
+backend/package-lock.json
+backend/.env
+backend/.env.local
+backend/dist/
+backend/build/
+backend/logs/
+backend/*.log
+
+# ============================================
+# FRONTEND SPECIFIC
+# ============================================
+frontend/node_modules/
+frontend/package-lock.json
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.env.local
+frontend/.vite/
+frontend/*.log
+
+# ============================================
+# SECURITY FILES (CRITICAL!)
+# ============================================
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.p8
+*.der
+ssl/
+certificates/
+keys/
+secrets/
+*.jks
+*.keystore
+
+# ============================================
+# SYSTEM FILES
+# ============================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ============================================
+# LOGS & TEMP FILES
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+*.pid
+*.seed
+*.pid.lock
+tmp/
+temp/
+
+# ============================================
+# TESTING
+# ============================================
+coverage/
+.nyc_output/
+.cypress/
+*.test.js
+*.spec.js
+jest.config.js
+*.test.ts
+*.spec.ts
+__tests__/
+__mocks__/
+
+# ============================================
+# DOCKER (Optional - for AWS deployment)
+# ============================================
+*.dockerignore
+Dockerfile
+docker-compose*.yml
+.docker/
+
+# ============================================
+# MISC
+# ============================================
+*.tgz
+*.gz
+*.zip
+*.rar
+*.7z
+.vite/
+.vercel/
+.netlify/
+.railway/
+.aws/
+*.local
+*.map
+*.d.ts
