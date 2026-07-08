@@ -10,6 +10,6 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "https://your-backend-url.onrender.com/api"
+    "VITE_API_URL": "https://employee-backend-kn4z.onrender.com/api"
   }
 }
