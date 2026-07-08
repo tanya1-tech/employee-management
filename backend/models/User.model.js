@@ -55,7 +55,6 @@ userSchema.pre('save', async function(next) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     this.updatedAt = new Date();
-    console.log('🔐 Password hashed for:', this.username);
     next();
   } catch (error) {
     next(error);
@@ -65,11 +64,8 @@ userSchema.pre('save', async function(next) {
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   try {
-    const result = await bcrypt.compare(candidatePassword, this.password);
-    console.log('🔍 Password comparison for', this.username, ':', result);
-    return result;
+    return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
-    console.error('Compare password error:', error);
     return false;
   }
 };
