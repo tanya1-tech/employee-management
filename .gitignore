@@ -140,3 +140,4 @@ docker-compose*.yml
 *.local
 *.map
 *.d.ts
+vercel.json
