@@ -46,7 +46,6 @@
           {{ authStore.isHR ? 'Attendance Management' : 'My Attendance' }}
         </h1>
         <div class="flex gap-2 flex-wrap">
-          <!-- Check-in Button -->
           <button 
             @click="handleCheckIn"
             :disabled="checkInLoading || todayStatus.isCheckedIn"
@@ -57,7 +56,6 @@
             Check In
           </button>
           
-          <!-- Check-out Button -->
           <button 
             @click="handleCheckOut"
             :disabled="checkOutLoading || !todayStatus.isCheckedIn || todayStatus.isCheckedOut"
@@ -218,7 +216,7 @@
                   <td class="px-6 py-4">
                     <select 
                       v-model="record.status" 
-                      @change="updateAttendance(record, index)"
+                      @change="updateAttendance(record)"
                       class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     >
                       <option value="not-marked">Not Marked</option>
@@ -249,9 +247,6 @@ const router = useRouter()
 const authStore = useAuthStore()
 const toast = useToast()
 
-// ============================================
-// STATE
-// ============================================
 const loading = ref(false)
 const checkInLoading = ref(false)
 const checkOutLoading = ref(false)
@@ -273,9 +268,6 @@ const todayStatus = ref({
   duration: null as { hours: number; minutes: number } | null,
 })
 
-// ============================================
-// HELPERS
-// ============================================
 const getStatusClass = (status: string) => {
   const classes: Record<string, string> = {
     present: 'bg-green-100 text-green-600',
@@ -317,9 +309,6 @@ const formatDateDisplay = (date: string) => {
   }
 }
 
-// ============================================
-// LOAD TODAY'S STATUS
-// ============================================
 const loadTodayStatus = async () => {
   try {
     const response = await attendanceApi.getTodayStatus()
@@ -335,41 +324,17 @@ const loadTodayStatus = async () => {
     }
   } catch (error: any) {
     console.error('Failed to load today status:', error)
-    // Don't show error toast for 404, just use default values
-    if (error.response?.status !== 404) {
-      toast.error('Failed to load today status')
-    }
   }
 }
 
-// ============================================
-// CHECK-IN
-// ============================================
 const handleCheckIn = async () => {
-  if (checkInLoading.value) return
-  
-  if (todayStatus.value.isCheckedIn) {
-    toast.warning('You already checked in today!')
-    return
-  }
+  if (checkInLoading.value || todayStatus.value.isCheckedIn) return
   
   checkInLoading.value = true
   try {
-    console.log('✅ Attempting check-in...')
     const response = await attendanceApi.checkIn()
-    
     if (response.data.success) {
       toast.success(response.data.message)
-      
-      // Update today's status immediately
-      todayStatus.value = {
-        ...todayStatus.value,
-        status: 'present',
-        checkInTime: formatTime(response.data.checkInTime),
-        isCheckedIn: true,
-      }
-      
-      // Refresh attendance data
       await loadTodayStatus()
       await loadAttendance()
     }
@@ -381,63 +346,25 @@ const handleCheckIn = async () => {
   }
 }
 
-// ============================================
-// CHECK-OUT
-// ============================================
 const handleCheckOut = async () => {
-  // Check if already checked out or not checked in
-  if (checkOutLoading.value) return
-  
-  if (!todayStatus.value.isCheckedIn) {
-    toast.warning('You need to check-in first before checking out!')
-    return
-  }
-  
-  if (todayStatus.value.isCheckedOut) {
-    toast.warning('You already checked out today!')
-    return
-  }
+  if (checkOutLoading.value || !todayStatus.value.isCheckedIn || todayStatus.value.isCheckedOut) return
   
   checkOutLoading.value = true
   try {
-    console.log('🚪 Attempting check-out...')
     const response = await attendanceApi.checkOut()
-    
     if (response.data.success) {
       toast.success(response.data.message)
-      
-      // Update today's status immediately
-      if (response.data.duration) {
-        todayStatus.value = {
-          ...todayStatus.value,
-          status: 'present',
-          checkOutTime: formatTime(response.data.checkOutTime),
-          isCheckedOut: true,
-          duration: response.data.duration,
-        }
-      }
-      
-      // Refresh attendance data
       await loadTodayStatus()
       await loadAttendance()
     }
   } catch (error: any) {
     console.error('Check-out error:', error)
-    const message = error.response?.data?.message || 'Check-out failed'
-    toast.error(message)
-    
-    // If no check-in found, refresh status
-    if (message.includes('No check-in found')) {
-      await loadTodayStatus()
-    }
+    toast.error(error.response?.data?.message || 'Check-out failed')
   } finally {
     checkOutLoading.value = false
   }
 }
 
-// ============================================
-// LOAD ATTENDANCE
-// ============================================
 const loadAttendance = async () => {
   loading.value = true
   try {
@@ -464,10 +391,7 @@ const loadAttendance = async () => {
   }
 }
 
-// ============================================
-// UPDATE ATTENDANCE
-// ============================================
-const updateAttendance = async (record: any, index: number) => {
+const updateAttendance = async (record: any) => {
   try {
     if (record.status === 'not-marked') {
       return
@@ -498,9 +422,6 @@ const updateAttendance = async (record: any, index: number) => {
   }
 }
 
-// ============================================
-// EXPORT CSV
-// ============================================
 const exportCSV = async () => {
   try {
     toast.info('Generating CSV...')
@@ -524,18 +445,12 @@ const exportCSV = async () => {
   }
 }
 
-// ============================================
-// LOGOUT
-// ============================================
 const handleLogout = () => {
   authStore.logout()
   toast.info('Logged out successfully')
   router.push('/login')
 }
 
-// ============================================
-// LIFECYCLE
-// ============================================
 onMounted(() => {
   loadTodayStatus()
   loadAttendance()

@@ -21,14 +21,9 @@
             <span>Employees</span>
           </router-link>
           
-          <router-link v-if="authStore.isEmployee" to="/attendance" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition">
+          <router-link to="/attendance" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition">
             <span>📋</span>
-            <span>My Attendance</span>
-          </router-link>
-          
-          <router-link v-if="authStore.isHR" to="/attendance" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition">
-            <span>📋</span>
-            <span>Attendance</span>
+            <span>{{ authStore.isHR ? 'Attendance' : 'My Attendance' }}</span>
           </router-link>
           
           <router-link to="/profile" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-600 hover:bg-gray-50 transition">
@@ -47,88 +42,74 @@
     <!-- Main Content -->
     <div class="ml-64">
       <header class="bg-white shadow-sm px-8 py-4 flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-800">
-          {{ authStore.isHR ? 'Employee Management' : 'Access Denied' }}
-        </h1>
+        <h1 class="text-2xl font-bold text-gray-800">Employee Management</h1>
         <button v-if="authStore.isHR" @click="openAddModal" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition">
           + Add Employee
         </button>
       </header>
 
       <main class="p-8">
-        <!-- ACCESS DENIED FOR EMPLOYEES -->
-        <div v-if="authStore.isEmployee" class="bg-white rounded-xl shadow-sm p-12 text-center">
-          <div class="text-6xl mb-4">🚫</div>
-          <h2 class="text-2xl font-bold text-gray-800 mb-2">Access Denied</h2>
-          <p class="text-gray-500 mb-6">You don't have permission to view this page.</p>
-          <router-link to="/dashboard" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-            Go to Dashboard
-          </router-link>
+        <!-- Search -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div class="flex items-center gap-4 flex-1">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search employees..."
+              class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            />
+          </div>
+          <button v-if="authStore.isHR" @click="exportCSV" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+            📥 Export CSV
+          </button>
         </div>
 
-        <!-- HR CONTENT -->
-        <div v-if="authStore.isHR">
-          <!-- Search -->
-          <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-4 flex-1">
-              <input
-                v-model="searchQuery"
-                type="text"
-                placeholder="Search employees..."
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              />
-            </div>
-            <button @click="exportCSV" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-              📥 Export CSV
-            </button>
-          </div>
+        <!-- Loading -->
+        <div v-if="loading" class="text-center py-8">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p class="mt-4 text-gray-500">Loading employees...</p>
+        </div>
 
-          <!-- Loading -->
-          <div v-if="loading" class="text-center py-8">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p class="mt-4 text-gray-500">Loading employees...</p>
-          </div>
-
-          <!-- Employee Table -->
-          <div v-else class="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                  <tr v-if="filteredEmployees.length === 0">
-                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                      No employees found. Click "Add Employee" to add one.
-                    </td>
-                  </tr>
-                  <tr v-for="emp in filteredEmployees" :key="emp._id || emp.id" class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ emp.employeeId }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">{{ emp.name }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">{{ emp.department }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">{{ emp.email }}</td>
-                    <td class="px-6 py-4">
-                      <span class="px-2 py-1 text-xs rounded-full" :class="getStatusClass(emp.status)">
-                        {{ emp.status }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="flex items-center gap-2">
-                        <button @click="editEmployee(emp)" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
-                        <button @click="deleteEmployee(emp._id || emp.id)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+        <!-- Employee Table -->
+        <div v-else class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200">
+                <tr v-if="filteredEmployees.length === 0">
+                  <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                    No employees found. Click "Add Employee" to add one.
+                  </td>
+                </tr>
+                <tr v-for="emp in filteredEmployees" :key="emp._id || emp.id" class="hover:bg-gray-50 transition">
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ emp.employeeId }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-600">{{ emp.name }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-600">{{ emp.department }}</td>
+                  <td class="px-6 py-4 text-sm text-gray-600">{{ emp.email }}</td>
+                  <td class="px-6 py-4">
+                    <span class="px-2 py-1 text-xs rounded-full" :class="getStatusClass(emp.status)">
+                      {{ emp.status }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-2">
+                      <button v-if="authStore.isHR" @click="editEmployee(emp)" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
+                      <button v-if="authStore.isHR" @click="deleteEmployee(emp._id || emp.id)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                      <span v-else class="text-gray-400 text-sm">View Only</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </main>
@@ -214,16 +195,10 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToast } from 'vue-toastification'
 import api from '../api'
-import type { Employee, EmployeeStatus } from '../types'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const toast = useToast()
-
-// Redirect if employee tries to access
-if (authStore.isEmployee) {
-  // Just show access denied, don't redirect
-}
 
 const employees = ref<any[]>([])
 const searchQuery = ref('')
@@ -272,8 +247,6 @@ const getStatusClass = (status: string) => {
 }
 
 const loadEmployees = async () => {
-  if (!authStore.isHR) return
-  
   loading.value = true
   try {
     const response = await api.get('/employees')
