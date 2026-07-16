@@ -46,7 +46,7 @@
       </header>
 
       <main class="p-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="max-w-2xl mx-auto">
           <!-- Profile Info -->
           <div class="bg-white rounded-xl shadow-sm p-8">
             <div class="flex items-center space-x-6 mb-8">
@@ -84,113 +84,58 @@
             </div>
           </div>
 
-          <!-- Check-in / Check-out & Change Password -->
-          <div class="space-y-6">
-            <!-- Check-in / Check-out Card -->
-            <div class="bg-white rounded-xl shadow-sm p-8">
-              <h3 class="text-xl font-bold text-gray-800 mb-6">⏰ Today's Attendance</h3>
-              
-              <div v-if="todayStatus.loading" class="text-center py-4">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <!-- Change Password Card -->
+          <div class="bg-white rounded-xl shadow-sm p-8 mt-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-6">🔐 Change Password</h3>
+            <p class="text-sm text-gray-500 mb-6">Update your password. You'll need your current password to make changes.</p>
+
+            <form @submit.prevent="changePassword" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Current Password *</label>
+                <input
+                  v-model="passwordForm.currentPassword"
+                  type="password"
+                  required
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="Enter current password"
+                />
               </div>
-              
-              <div v-else>
-                <div class="flex items-center justify-between mb-4">
-                  <span class="text-sm text-gray-500">Status</span>
-                  <span class="px-3 py-1 rounded-full text-sm font-medium" :class="getStatusBadgeClass(todayStatus.status)">
-                    {{ todayStatus.status || 'Not Marked' }}
-                  </span>
-                </div>
 
-                <div class="flex items-center justify-between mb-4">
-                  <span class="text-sm text-gray-500">Check In</span>
-                  <span class="font-medium text-gray-800">{{ todayStatus.checkInTime || '--:--' }}</span>
-                </div>
-
-                <div class="flex items-center justify-between mb-4">
-                  <span class="text-sm text-gray-500">Check Out</span>
-                  <span class="font-medium text-gray-800">{{ todayStatus.checkOutTime || '--:--' }}</span>
-                </div>
-
-                <div v-if="todayStatus.duration" class="flex items-center justify-between mb-6 p-3 bg-gray-50 rounded-lg">
-                  <span class="text-sm text-gray-500">Total Duration</span>
-                  <span class="font-medium text-blue-600">
-                    {{ todayStatus.duration.hours }}h {{ todayStatus.duration.minutes }}m
-                  </span>
-                </div>
-
-                <div class="flex gap-3">
-                  <button 
-                    @click="handleCheckIn"
-                    :disabled="todayStatus.isCheckedIn || todayStatus.loading"
-                    class="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    ✅ Check In
-                  </button>
-                  <button 
-                    @click="handleCheckOut"
-                    :disabled="!todayStatus.isCheckedIn || todayStatus.isCheckedOut || todayStatus.loading"
-                    class="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    🚪 Check Out
-                  </button>
-                </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">New Password *</label>
+                <input
+                  v-model="passwordForm.newPassword"
+                  type="password"
+                  required
+                  minlength="6"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="Enter new password (min 6 characters)"
+                />
               </div>
-            </div>
 
-            <!-- Change Password Card -->
-            <div class="bg-white rounded-xl shadow-sm p-8">
-              <h3 class="text-xl font-bold text-gray-800 mb-6">🔐 Change Password</h3>
-              <p class="text-sm text-gray-500 mb-6">Update your password. You'll need your current password to make changes.</p>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password *</label>
+                <input
+                  v-model="passwordForm.confirmPassword"
+                  type="password"
+                  required
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  placeholder="Confirm new password"
+                />
+              </div>
 
-              <form @submit.prevent="changePassword" class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Current Password *</label>
-                  <input
-                    v-model="passwordForm.currentPassword"
-                    type="password"
-                    required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    placeholder="Enter current password"
-                  />
-                </div>
+              <div v-if="passwordError" class="text-red-600 text-sm">{{ passwordError }}</div>
+              <div v-if="passwordSuccess" class="text-green-600 text-sm">{{ passwordSuccess }}</div>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">New Password *</label>
-                  <input
-                    v-model="passwordForm.newPassword"
-                    type="password"
-                    required
-                    minlength="6"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    placeholder="Enter new password (min 6 characters)"
-                  />
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password *</label>
-                  <input
-                    v-model="passwordForm.confirmPassword"
-                    type="password"
-                    required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    placeholder="Confirm new password"
-                  />
-                </div>
-
-                <div v-if="passwordError" class="text-red-600 text-sm">{{ passwordError }}</div>
-                <div v-if="passwordSuccess" class="text-green-600 text-sm">{{ passwordSuccess }}</div>
-
-                <button
-                  type="submit"
-                  :disabled="passwordLoading"
-                  class="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-50"
-                >
-                  <span v-if="passwordLoading">Updating...</span>
-                  <span v-else>Update Password</span>
-                </button>
-              </form>
-            </div>
+              <button
+                type="submit"
+                :disabled="passwordLoading"
+                class="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition disabled:opacity-50"
+              >
+                <span v-if="passwordLoading">Updating...</span>
+                <span v-else>Update Password</span>
+              </button>
+            </form>
           </div>
         </div>
       </main>
@@ -199,103 +144,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToast } from 'vue-toastification'
-import api, { attendanceApi } from '../api'
+import api from '../api'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const toast = useToast()
-
-// ============================================
-// TODAY'S STATUS
-// ============================================
-const todayStatus = ref({
-  loading: false,
-  status: 'not-marked',
-  checkInTime: null as string | null,
-  checkOutTime: null as string | null,
-  isCheckedIn: false,
-  isCheckedOut: false,
-  duration: null as { hours: number; minutes: number } | null,
-})
-
-const getStatusBadgeClass = (status: string) => {
-  const classes: Record<string, string> = {
-    present: 'bg-green-100 text-green-600',
-    absent: 'bg-red-100 text-red-600',
-    late: 'bg-yellow-100 text-yellow-600',
-    'half-day': 'bg-orange-100 text-orange-600',
-    'not-marked': 'bg-gray-100 text-gray-500',
-  }
-  return classes[status] || 'bg-gray-100 text-gray-500'
-}
-
-const formatTime = (date: string | null) => {
-  if (!date) return '--:--'
-  try {
-    return new Date(date).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return '--:--'
-  }
-}
-
-const loadTodayStatus = async () => {
-  todayStatus.value.loading = true
-  try {
-    const response = await attendanceApi.getTodayStatus()
-    if (response.data.success) {
-      todayStatus.value = {
-        loading: false,
-        status: response.data.status || 'not-marked',
-        checkInTime: response.data.checkInTime ? formatTime(response.data.checkInTime) : null,
-        checkOutTime: response.data.checkOutTime ? formatTime(response.data.checkOutTime) : null,
-        isCheckedIn: response.data.isCheckedIn || false,
-        isCheckedOut: response.data.isCheckedOut || false,
-        duration: response.data.duration || null,
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load today status:', error)
-  } finally {
-    todayStatus.value.loading = false
-  }
-}
-
-const handleCheckIn = async () => {
-  try {
-    todayStatus.value.loading = true
-    const response = await attendanceApi.checkIn()
-    if (response.data.success) {
-      toast.success(response.data.message)
-      await loadTodayStatus()
-    }
-  } catch (error: any) {
-    toast.error(error.response?.data?.message || 'Check-in failed')
-  } finally {
-    todayStatus.value.loading = false
-  }
-}
-
-const handleCheckOut = async () => {
-  try {
-    todayStatus.value.loading = true
-    const response = await attendanceApi.checkOut()
-    if (response.data.success) {
-      toast.success(response.data.message)
-      await loadTodayStatus()
-    }
-  } catch (error: any) {
-    toast.error(error.response?.data?.message || 'Check-out failed')
-  } finally {
-    todayStatus.value.loading = false
-  }
-}
 
 // ============================================
 // CHANGE PASSWORD
@@ -327,7 +184,7 @@ const changePassword = async () => {
   passwordLoading.value = true
 
   try {
-    const response = await api.post('/auth/change-password', {
+    const response = await api.post('/api/auth/change-password', {
       currentPassword: passwordForm.value.currentPassword,
       newPassword: passwordForm.value.newPassword,
     })
@@ -352,8 +209,4 @@ const handleLogout = () => {
   toast.info('Logged out successfully')
   router.push('/login')
 }
-
-onMounted(() => {
-  loadTodayStatus()
-})
 </script>

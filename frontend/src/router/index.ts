@@ -1,83 +1,44 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
+import axios from 'axios'
 
-// Import views
-import Login from '../views/Login.vue'
-import Dashboard from '../views/Dashboard.vue'
-import Profile from '../views/Profile.vue'
-import Employees from '../views/Employees.vue'
-import Attendance from '../views/Attendance.vue'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-const routes = [
-  {
-    path: '/',
-    redirect: '/dashboard'
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
   },
-  {
-    path: '/login',
-    name: 'Login',
-    component: Login,
-    meta: { requiresAuth: false }
-  },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: Dashboard,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/profile',
-    name: 'Profile',
-    component: Profile,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/employees',
-    name: 'Employees',
-    component: Employees,
-    meta: { requiresAuth: true, role: 'hr' }
-  },
-  {
-    path: '/attendance',
-    name: 'Attendance',
-    component: Attendance,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/dashboard'
-  }
-]
-
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
+  timeout: 30000,
 })
 
-// Navigation guard
-router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
-  const isAuthenticated = authStore.checkAuth()
-  
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login')
-    return
-  }
-  
-  if (to.meta.role && isAuthenticated) {
-    const userRole = authStore.user?.role
-    if (to.meta.role !== userRole) {
-      next('/dashboard')
-      return
+// Request interceptor to add token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
     }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
   }
-  
-  if (to.path === '/login' && isAuthenticated) {
-    next('/dashboard')
-    return
-  }
-  
-  next()
-})
+)
 
-export default router
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => {
+    return response
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
+export default api
