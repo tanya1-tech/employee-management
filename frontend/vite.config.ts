@@ -27,13 +27,7 @@ export default defineConfig({
         assetFileNames: 'assets/[name].[hash][extname]',
       },
     },
-    // ✅ Force CSS processing
+    // ✅ Force CSS to be generated
     sourcemap: false,
-    minify: 'terser',
-  },
-  
-  // ✅ Add this
-  optimizeDeps: {
-    include: ['vue', 'vue-router', 'pinia'],
   },
 })
