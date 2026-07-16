@@ -9,14 +9,20 @@ exports.getAttendance = async (req, res) => {
   try {
     // Get date from query parameter, default to today
     const dateParam = req.query.date;
+    let selectedDateStr;
     let selectedDate;
     
     if (dateParam) {
-      selectedDate = new Date(dateParam);
-      selectedDate.setHours(0, 0, 0, 0);
+      selectedDateStr = dateParam;
+      const parts = dateParam.split('-');
+      selectedDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
     } else {
-      selectedDate = new Date();
-      selectedDate.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      selectedDateStr = `${year}-${month}-${day}`;
+      selectedDate = new Date(year, now.getMonth(), now.getDate());
     }
     
     const nextDay = new Date(selectedDate);
@@ -31,7 +37,7 @@ exports.getAttendance = async (req, res) => {
       
       const attendance = await Attendance.find({
         employeeId: employee._id,
-        date: { $gte: selectedDate, $lt: nextDay }
+        date: selectedDateStr
       }).populate('employeeId', 'name employeeId department');
       
       const formatted = attendance.map(record => ({
@@ -41,8 +47,8 @@ exports.getAttendance = async (req, res) => {
         department: record.employeeId?.department || 'N/A',
         date: record.date,
         status: record.status,
-        checkIn: record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString() : '-',
-        checkOut: record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString() : '-',
+        checkIn: record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-',
+        checkOut: record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-',
         attendanceId: record._id,
       }));
 
@@ -54,7 +60,7 @@ exports.getAttendance = async (req, res) => {
         success: true, 
         attendance: formatted,
         stats: { present, absent, late },
-        date: selectedDate,
+        date: selectedDateStr,
       });
     }
 
@@ -62,7 +68,7 @@ exports.getAttendance = async (req, res) => {
     const employees = await Employee.find({});
 
     const attendanceRecords = await Attendance.find({
-      date: { $gte: selectedDate, $lt: nextDay }
+      date: selectedDateStr
     });
 
     const formatted = employees.map(emp => {
@@ -75,10 +81,10 @@ exports.getAttendance = async (req, res) => {
         employeeName: emp.name,
         employeeId: emp.employeeId,
         department: emp.department,
-        date: selectedDate,
+        date: selectedDateStr,
         status: record?.status || 'not-marked',
-        checkIn: record?.checkInTime ? new Date(record.checkInTime).toLocaleTimeString() : '-',
-        checkOut: record?.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString() : '-',
+        checkIn: record?.checkInTime ? new Date(record.checkInTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-',
+        checkOut: record?.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-',
         attendanceId: record?._id || null,
       };
     });
@@ -92,7 +98,7 @@ exports.getAttendance = async (req, res) => {
       success: true, 
       attendance: formatted,
       stats: { present, absent, late, halfDay, total: formatted.length },
-      date: selectedDate,
+      date: selectedDateStr,
     });
   } catch (error) {
     console.error('❌ Get attendance error:', error);
@@ -111,14 +117,16 @@ exports.markAttendance = async (req, res) => {
     const { employeeId, status, checkInTime, checkOutTime, date } = req.body;
     
     let employee;
-    let attendanceDate;
+    let dateStr;
 
     if (date) {
-      attendanceDate = new Date(date);
-      attendanceDate.setHours(0, 0, 0, 0);
+      dateStr = date;
     } else {
-      attendanceDate = new Date();
-      attendanceDate.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      dateStr = `${year}-${month}-${day}`;
     }
 
     if (req.user.role === 'employee') {
@@ -145,12 +153,9 @@ exports.markAttendance = async (req, res) => {
       }
     }
 
-    const nextDay = new Date(attendanceDate);
-    nextDay.setDate(nextDay.getDate() + 1);
-
     let existing = await Attendance.findOne({
       employeeId: employee._id,
-      date: { $gte: attendanceDate, $lt: nextDay }
+      date: dateStr
     });
 
     if (existing) {
@@ -169,7 +174,7 @@ exports.markAttendance = async (req, res) => {
 
     const attendance = new Attendance({
       employeeId: employee._id,
-      date: attendanceDate,
+      date: dateStr,
       status: status || 'present',
       checkInTime: checkInTime ? new Date(checkInTime) : new Date(),
       checkOutTime: checkOutTime ? new Date(checkOutTime) : null,
@@ -229,8 +234,8 @@ exports.getEmployeeAttendance = async (req, res) => {
       department: record.employeeId?.department || 'N/A',
       date: record.date,
       status: record.status,
-      checkIn: record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString() : '-',
-      checkOut: record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString() : '-',
+      checkIn: record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-',
+      checkOut: record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-',
     }));
 
     const present = formatted.filter(r => r.status === 'present').length;
@@ -272,11 +277,7 @@ exports.updateAttendance = async (req, res) => {
     if (checkInTime) attendance.checkInTime = new Date(checkInTime);
     if (checkOutTime) attendance.checkOutTime = new Date(checkOutTime);
     if (remarks) attendance.remarks = remarks;
-    if (date) {
-      const newDate = new Date(date);
-      newDate.setHours(0, 0, 0, 0);
-      attendance.date = newDate;
-    }
+    if (date) attendance.date = date;
     attendance.updatedAt = new Date();
     
     await attendance.save();
@@ -326,26 +327,29 @@ exports.deleteAttendance = async (req, res) => {
 };
 
 // ============================================
-// CHECK-IN (Mark Arrival)
+// CHECK-IN (Mark Arrival) - STORE DATE AS STRING
 // ============================================
 exports.checkIn = async (req, res) => {
   try {
     const { date } = req.body;
     
     let employee;
-    let attendanceDate;
+    let dateStr;
 
+    // ✅ Get today's date as a string (YYYY-MM-DD)
     if (date) {
-      attendanceDate = new Date(date);
-      attendanceDate.setHours(0, 0, 0, 0);
+      dateStr = date;
     } else {
-      attendanceDate = new Date();
-      attendanceDate.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      dateStr = `${year}-${month}-${day}`;
     }
 
-    console.log('🔍 Check-in attempt for user:', req.user.id, 'role:', req.user.role);
+    console.log('📅 Check-in date (string):', dateStr);
 
-    // Find employee - works for both HR and Employee
+    // Find employee
     employee = await Employee.findOne({ userId: req.user.id });
     
     if (!employee && req.user.employeeId) {
@@ -356,7 +360,6 @@ exports.checkIn = async (req, res) => {
       employee = await Employee.findOne({ email: req.user.email });
     }
     
-    // If HR is marking for someone else
     if (!employee && req.user.role === 'hr' && req.body.employeeId) {
       employee = await Employee.findById(req.body.employeeId);
       if (!employee) {
@@ -374,27 +377,23 @@ exports.checkIn = async (req, res) => {
 
     console.log('✅ Employee found:', employee.name, employee.employeeId);
 
-    const nextDay = new Date(attendanceDate);
-    nextDay.setDate(nextDay.getDate() + 1);
-
     // Check if already checked in today
     let existing = await Attendance.findOne({
       employeeId: employee._id,
-      date: { $gte: attendanceDate, $lt: nextDay }
+      date: dateStr
     });
 
     const now = new Date();
-    const checkInTime = now;
 
     if (existing) {
       if (existing.checkInTime) {
         return res.status(400).json({
           success: false,
-          message: 'Already checked in today at ' + new Date(existing.checkInTime).toLocaleTimeString()
+          message: 'Already checked in today at ' + new Date(existing.checkInTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
         });
       }
       
-      existing.checkInTime = checkInTime;
+      existing.checkInTime = now;
       existing.status = 'present';
       existing.updatedAt = new Date();
       await existing.save();
@@ -402,29 +401,29 @@ exports.checkIn = async (req, res) => {
       return res.json({
         success: true,
         attendance: existing,
-        message: `Check-in successful at ${checkInTime.toLocaleTimeString()}`,
-        checkInTime: checkInTime
+        message: `Check-in successful at ${now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
+        checkInTime: now
       });
     }
 
-    // Create new attendance record
+    // Create new attendance record with date as string
     const attendance = new Attendance({
       employeeId: employee._id,
-      date: attendanceDate,
+      date: dateStr, // ✅ Stored as string "2026-07-17"
       status: 'present',
-      checkInTime: checkInTime,
+      checkInTime: now,
       checkOutTime: null,
     });
 
     await attendance.save();
 
-    console.log(`✅ Check-in successful for: ${employee.name} at ${checkInTime.toLocaleTimeString()}`);
+    console.log(`✅ Check-in successful for: ${employee.name} at ${now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
 
     res.status(201).json({
       success: true,
       attendance,
-      message: `Check-in successful at ${checkInTime.toLocaleTimeString()}`,
-      checkInTime: checkInTime
+      message: `Check-in successful at ${now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
+      checkInTime: now
     });
   } catch (error) {
     console.error('❌ Check-in error:', error);
@@ -443,19 +442,22 @@ exports.checkOut = async (req, res) => {
     const { date } = req.body;
     
     let employee;
-    let attendanceDate;
+    let dateStr;
 
+    // ✅ Get today's date as a string (YYYY-MM-DD)
     if (date) {
-      attendanceDate = new Date(date);
-      attendanceDate.setHours(0, 0, 0, 0);
+      dateStr = date;
     } else {
-      attendanceDate = new Date();
-      attendanceDate.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      dateStr = `${year}-${month}-${day}`;
     }
 
-    console.log('🔍 Check-out attempt for user:', req.user.id, 'role:', req.user.role);
+    console.log('📅 Check-out date (string):', dateStr);
 
-    // Find employee - works for both HR and Employee
+    // Find employee
     employee = await Employee.findOne({ userId: req.user.id });
     
     if (!employee && req.user.employeeId) {
@@ -466,7 +468,6 @@ exports.checkOut = async (req, res) => {
       employee = await Employee.findOne({ email: req.user.email });
     }
     
-    // If HR is marking for someone else
     if (!employee && req.user.role === 'hr' && req.body.employeeId) {
       employee = await Employee.findById(req.body.employeeId);
       if (!employee) {
@@ -484,13 +485,10 @@ exports.checkOut = async (req, res) => {
 
     console.log('✅ Employee found:', employee.name, employee.employeeId);
 
-    const nextDay = new Date(attendanceDate);
-    nextDay.setDate(nextDay.getDate() + 1);
-
     // Find today's attendance record
     let existing = await Attendance.findOne({
       employeeId: employee._id,
-      date: { $gte: attendanceDate, $lt: nextDay }
+      date: dateStr
     });
 
     console.log('🔍 Attendance record found:', existing ? 'Yes' : 'No');
@@ -502,15 +500,13 @@ exports.checkOut = async (req, res) => {
       });
     }
 
-    // Check if already checked out
     if (existing.checkOutTime) {
       return res.status(400).json({
         success: false,
-        message: 'Already checked out today at ' + new Date(existing.checkOutTime).toLocaleTimeString()
+        message: 'Already checked out today at ' + new Date(existing.checkOutTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
       });
     }
 
-    // Check if checked in
     if (!existing.checkInTime) {
       return res.status(400).json({
         success: false,
@@ -529,12 +525,12 @@ exports.checkOut = async (req, res) => {
     const hours = Math.floor(durationMs / (1000 * 60 * 60));
     const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
 
-    console.log(`✅ Check-out successful for: ${employee.name} at ${now.toLocaleTimeString()}`);
+    console.log(`✅ Check-out successful for: ${employee.name} at ${now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
 
     res.json({
       success: true,
       attendance: existing,
-      message: `Check-out successful at ${now.toLocaleTimeString()}`,
+      message: `Check-out successful at ${now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}`,
       checkOutTime: now,
       duration: {
         hours,
@@ -551,13 +547,8 @@ exports.checkOut = async (req, res) => {
   }
 };
 
-// Use local date instead of UTC
-const now = new Date();
-const today = new Date();
-const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
 // ============================================
-// GET TODAY'S STATUS (Check-in/out status)
+// GET TODAY'S STATUS - USING STRING DATE
 // ============================================
 exports.getTodayStatus = async (req, res) => {
   try {
@@ -566,10 +557,14 @@ exports.getTodayStatus = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
 
-    // Get today's date range
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    // ✅ Get today's date as a string (YYYY-MM-DD)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
+    console.log('📅 Today (string):', dateStr);
 
     const employee = await Employee.findOne({ userId });
     if (!employee) {
@@ -579,13 +574,18 @@ exports.getTodayStatus = async (req, res) => {
         isCheckedIn: false,
         isCheckedOut: false,
         date: null,
+        checkInTime: null,
+        checkOutTime: null,
+        duration: null,
       });
     }
 
     const record = await Attendance.findOne({
       employeeId: employee._id,
-      date: { $gte: startOfDay, $lt: endOfDay }
+      date: dateStr
     });
+
+    console.log('📋 Found record:', record ? 'Yes' : 'No');
 
     res.json({
       success: true,
@@ -598,6 +598,7 @@ exports.getTodayStatus = async (req, res) => {
       date: record?.date || null,
     });
   } catch (error) {
+    console.error('❌ Get today status error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -607,13 +608,14 @@ exports.getTodayStatus = async (req, res) => {
 // ============================================
 exports.getTodayAttendance = async (req, res) => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
 
     const records = await Attendance.find({
-      date: { $gte: today, $lt: tomorrow }
+      date: dateStr
     }).populate('employeeId', 'name employeeId department');
 
     const present = records.filter(r => r.status === 'present').length;
@@ -627,15 +629,15 @@ exports.getTodayAttendance = async (req, res) => {
       employeeId: record.employeeId?.employeeId || 'N/A',
       department: record.employeeId?.department || 'N/A',
       status: record.status,
-      checkIn: record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString() : '-',
-      checkOut: record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString() : '-',
+      checkIn: record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-',
+      checkOut: record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-',
     }));
 
     res.json({ 
       success: true, 
       attendance: formatted,
       summary: { present, absent, late, halfDay, total: records.length },
-      date: today,
+      date: dateStr,
     });
   } catch (error) {
     console.error('❌ Get today attendance error:', error);
@@ -651,13 +653,14 @@ exports.getTodayAttendance = async (req, res) => {
 // ============================================
 exports.getAttendanceSummary = async (req, res) => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
 
     const todayRecords = await Attendance.find({
-      date: { $gte: today, $lt: tomorrow }
+      date: dateStr
     });
 
     const present = todayRecords.filter(r => r.status === 'present').length;
@@ -682,7 +685,7 @@ exports.getAttendanceSummary = async (req, res) => {
           rate,
         }
       },
-      date: today,
+      date: dateStr,
     });
   } catch (error) {
     console.error('❌ Get attendance summary error:', error);
@@ -698,6 +701,12 @@ exports.getAttendanceSummary = async (req, res) => {
 // ============================================
 exports.getAttendanceStats = async (req, res) => {
   try {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
     if (req.user.role === 'employee') {
       const employee = await Employee.findOne({ userId: req.user.id });
       if (!employee) {
@@ -710,14 +719,9 @@ exports.getAttendanceStats = async (req, res) => {
       const allAttendance = await Attendance.find({ employeeId: employee._id });
       const totalPresent = allAttendance.filter(a => a.status === 'present').length;
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
       const todayRecord = await Attendance.findOne({
         employeeId: employee._id,
-        date: { $gte: today, $lt: tomorrow }
+        date: dateStr
       });
 
       return res.json({
@@ -730,13 +734,9 @@ exports.getAttendanceStats = async (req, res) => {
     }
 
     const totalEmployees = await Employee.countDocuments();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
 
     const todayRecords = await Attendance.find({
-      date: { $gte: today, $lt: tomorrow }
+      date: dateStr
     });
 
     const present = todayRecords.filter(r => r.status === 'present').length;
@@ -773,18 +773,10 @@ exports.exportAttendanceCSV = async (req, res) => {
     let dateRangeText = 'All Time';
     
     if (startDate && endDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      dateFilter = { date: { $gte: start, $lte: end } };
+      dateFilter = { date: { $gte: startDate, $lte: endDate } };
       dateRangeText = `${startDate} to ${endDate}`;
     } else if (startDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      const nextDay = new Date(start);
-      nextDay.setDate(nextDay.getDate() + 1);
-      dateFilter = { date: { $gte: start, $lt: nextDay } };
+      dateFilter = { date: startDate };
       dateRangeText = startDate;
     }
 
@@ -822,13 +814,13 @@ exports.exportAttendanceCSV = async (req, res) => {
     } else {
       attendanceRecords.forEach(record => {
         const row = [
-          record.date ? new Date(record.date).toLocaleDateString('en-US') : 'N/A',
+          record.date || 'N/A',
           record.employeeId?.employeeId || 'N/A',
           record.employeeId?.name || 'Unknown',
           record.employeeId?.department || 'N/A',
           record.status || 'not-marked',
-          record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString() : '-',
-          record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString() : '-'
+          record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-',
+          record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '-'
         ];
         csvRows.push(row.join(','));
       });

@@ -280,46 +280,56 @@ const getStatusBadgeClass = (status: string) => getStatusClass(status)
 const formatTime = (date: string | null) => {
   if (!date) return '--:--'
   try {
-    return new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    return new Date(date).toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'Asia/Kolkata'
+    })
   } catch {
     return '--:--'
   }
 }
 
+// ✅ FIXED: Display date as string without conversion
 const formatDateDisplay = (date: string) => {
   if (!date) return 'Today'
   try {
-    return new Date(date).toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
+    // If date is already a string like "2026-07-17", display it directly
+    if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const parts = date.split('-');
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      return d.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'Asia/Kolkata'
+      });
+    }
+    // Fallback for other date formats
+    const d = new Date(date);
+    return d.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
       day: 'numeric',
-       timeZone: 'Asia/Kolkata'  
-    })
+      timeZone: 'Asia/Kolkata'
+    });
   } catch {
     return 'Today'
   }
 }
 
-// ✅ FIXED: Check if record is from today
 const loadTodayStatus = async () => {
   try {
     const response = await api.get('/api/attendance/today-status')
     if (response.data.success) {
-      const today = new Date()
-      const todayStr = today.toDateString()
-      
-      // Check if the record date is today
-      const recordDate = response.data.date ? new Date(response.data.date).toDateString() : null
-      const isToday = recordDate === todayStr
-      
       todayStatus.value = {
         status: response.data.status || 'not-marked',
         checkInTime: response.data.checkInTime ? formatTime(response.data.checkInTime) : null,
         checkOutTime: response.data.checkOutTime ? formatTime(response.data.checkOutTime) : null,
-        // ✅ Only enable buttons if record is from TODAY
-        isCheckedIn: isToday && (response.data.isCheckedIn || false),
-        isCheckedOut: isToday && (response.data.isCheckedOut || false),
+        isCheckedIn: response.data.isCheckedIn || false,
+        isCheckedOut: response.data.isCheckedOut || false,
         duration: response.data.duration || null,
       }
     }
