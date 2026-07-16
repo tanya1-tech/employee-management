@@ -7,6 +7,7 @@ const connectDB = async () => {
       dbName: 'employee_management', // Important! Creates/uses this database
       useNewUrlParser: true,
       useUnifiedTopology: true,
+        timezone: 'Asia/Kolkata',
     });
     
     console.log(`✅ MongoDB connected successfully`);
