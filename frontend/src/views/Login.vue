@@ -12,6 +12,16 @@
           <p class="text-gray-500 mt-2">Sign in to your account</p>
         </div>
 
+        <!-- Error Message -->
+        <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          {{ error }}
+        </div>
+
+        <!-- Success Message -->
+        <div v-if="success" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
+          {{ success }}
+        </div>
+
         <form @submit.prevent="handleLogin" class="space-y-6">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Username / Email</label>
@@ -61,7 +71,7 @@
           <button
             type="submit"
             :disabled="loading"
-            class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition transform hover:scale-[1.02] disabled:opacity-50"
+            class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span v-if="loading">Signing in...</span>
             <span v-else>Sign In</span>
@@ -71,6 +81,9 @@
         <div class="mt-6 text-center">
           <p class="text-xs text-gray-400">
             Contact your HR for login credentials
+          </p>
+          <p class="text-xs text-gray-400 mt-2">
+            Demo: admin / tan7178
           </p>
         </div>
       </div>
@@ -82,25 +95,32 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useToast } from 'vue-toastification'
-import axios from 'axios';
+
 const router = useRouter()
 const authStore = useAuthStore()
-const toast = useToast()
 
+// Form data
 const username = ref('')
 const password = ref('')
 const role = ref('hr')
 const showPassword = ref(false)
 const loading = ref(false)
+const error = ref('')
+const success = ref('')
 
 const handleLogin = async () => {
+  // Clear previous messages
+  error.value = ''
+  success.value = ''
+
+  // Validate input
   if (!username.value || !password.value) {
-    toast.error('Please enter username and password')
+    error.value = 'Please enter username and password'
     return
   }
 
   loading.value = true
+
   try {
     const result = await authStore.login({
       username: username.value,
@@ -108,34 +128,34 @@ const handleLogin = async () => {
     })
 
     if (result.success) {
-      toast.success('Login successful!')
-      router.push('/dashboard')
+      success.value = 'Login successful! Redirecting...'
+      
+      // Store role for redirection
+      const userRole = authStore.user?.role || role.value
+      
+      // Redirect based on role
+      setTimeout(() => {
+        if (userRole === 'hr') {
+          router.push('/hr/dashboard')
+        } else {
+          router.push('/employee/dashboard')
+        }
+      }, 500)
     } else {
-      toast.error(result.message || 'Login failed')
+      error.value = result.message || 'Login failed. Please check your credentials.'
     }
-  } catch (error) {
-    console.error('Login error:', error)
-    toast.error('An error occurred')
+  } catch (err: any) {
+    console.error('Login error:', err)
+    error.value = err.message || 'An unexpected error occurred'
   } finally {
     loading.value = false
   }
 }
 
-// In your Login.vue or login function
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-console.log('🔍 API URL:', API_URL);
-console.log('🔍 Full URL:', `${API_URL}/api/auth/login`);
-
-try {
-  const response = await axios.post(`${API_URL}/api/auth/login`, {
-    username: this.username,
-    password: this.password
-  });
-  console.log('✅ Response:', response.data);
-} catch (error) {
-  console.error('❌ Full error:', error);
-  console.error('❌ Request URL:', error.config?.url);
-  console.error('❌ Response status:', error.response?.status);
-  console.error('❌ Response data:', error.response?.data);
+// Auto-fill demo credentials (for testing)
+const fillDemoCredentials = () => {
+  username.value = 'admin'
+  password.value = 'tan7178'
+  role.value = 'hr'
 }
 </script>
