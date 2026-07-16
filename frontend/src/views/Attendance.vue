@@ -241,7 +241,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToast } from 'vue-toastification'
-import api from '../api'
+import api, { attendanceApi } from '../api'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -297,7 +297,7 @@ const formatDateDisplay = (date: string) => {
 
 const loadTodayStatus = async () => {
   try {
-    const response = await api.get('/attendance/today-status')
+    const response = await attendanceApi.getTodayStatus()
     if (response.data.success) {
       todayStatus.value = {
         status: response.data.status || 'not-marked',
@@ -317,7 +317,7 @@ const handleCheckIn = async () => {
   if (checkInLoading.value || todayStatus.value.isCheckedIn) return
   checkInLoading.value = true
   try {
-    const response = await api.post('/attendance/check-in')
+    const response = await attendanceApi.checkIn()
     if (response.data.success) {
       toast.success(response.data.message)
       await loadTodayStatus()
@@ -334,7 +334,7 @@ const handleCheckOut = async () => {
   if (checkOutLoading.value || !todayStatus.value.isCheckedIn || todayStatus.value.isCheckedOut) return
   checkOutLoading.value = true
   try {
-    const response = await api.post('/attendance/check-out')
+    const response = await attendanceApi.checkOut()
     if (response.data.success) {
       toast.success(response.data.message)
       await loadTodayStatus()
@@ -387,7 +387,7 @@ const updateAttendance = async (record: any) => {
 
 const exportCSV = async () => {
   try {
-    const response = await api.get(`/attendance/export?date=${selectedDate.value}`, { responseType: 'blob' })
+    const response = await attendanceApi.exportCSV(selectedDate.value, selectedDate.value)
     const blob = new Blob([response.data], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')

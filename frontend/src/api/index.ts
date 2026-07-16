@@ -9,6 +9,7 @@ const api = axios.create({
   },
 })
 
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
@@ -20,6 +21,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -31,5 +33,23 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+// ✅ ALL ATTENDANCE API METHODS
+export const attendanceApi = {
+  // Get today's status for the logged-in employee
+  getTodayStatus: () => api.get('/attendance/today-status'),
+  
+  // Check in
+  checkIn: () => api.post('/attendance/check-in'),
+  
+  // Check out
+  checkOut: () => api.post('/attendance/check-out'),
+  
+  // Export CSV
+  exportCSV: (startDate: string, endDate: string) => 
+    api.get(`/attendance/export?startDate=${startDate}&endDate=${endDate}`, { 
+      responseType: 'blob' 
+    }),
+}
 
 export default api
