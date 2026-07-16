@@ -7,9 +7,8 @@ const attendanceSchema = new mongoose.Schema({
     required: true,
   },
   date: {
-    type: String,
+    type: String,  // ✅ Stored as string "YYYY-MM-DD"
     required: true,
-    
   },
   status: {
     type: String,
@@ -22,9 +21,12 @@ const attendanceSchema = new mongoose.Schema({
   checkOutTime: {
     type: Date,
   },
+  duration: {
+    hours: Number,
+    minutes: Number,
+  },
   remarks: {
     type: String,
-    trim: true,
   },
   createdAt: {
     type: Date,
@@ -35,8 +37,5 @@ const attendanceSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
-
-// Compound index to ensure unique attendance per employee per day
-attendanceSchema.index({ employeeId: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model('Attendance', attendanceSchema);

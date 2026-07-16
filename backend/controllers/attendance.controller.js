@@ -24,9 +24,6 @@ exports.getAttendance = async (req, res) => {
       selectedDateStr = `${year}-${month}-${day}`;
       selectedDate = new Date(year, now.getMonth(), now.getDate());
     }
-    
-    const nextDay = new Date(selectedDate);
-    nextDay.setDate(nextDay.getDate() + 1);
 
     // If employee, return only their records for the selected date
     if (req.user.role === 'employee') {
@@ -435,7 +432,7 @@ exports.checkIn = async (req, res) => {
 };
 
 // ============================================
-// CHECK-OUT (Mark Departure)
+// CHECK-OUT (Mark Departure) - FIXED WITH STRING DATE
 // ============================================
 exports.checkOut = async (req, res) => {
   try {
@@ -485,13 +482,14 @@ exports.checkOut = async (req, res) => {
 
     console.log('✅ Employee found:', employee.name, employee.employeeId);
 
-    // Find today's attendance record
+    // ✅ Find today's attendance record using STRING date
     let existing = await Attendance.findOne({
       employeeId: employee._id,
-      date: dateStr
+      date: dateStr  // ✅ Query using the string, NOT a Date object
     });
 
     console.log('🔍 Attendance record found:', existing ? 'Yes' : 'No');
+    console.log('🔍 Record date:', existing?.date);
 
     if (!existing) {
       return res.status(404).json({
@@ -580,12 +578,14 @@ exports.getTodayStatus = async (req, res) => {
       });
     }
 
+    // ✅ Query using the string date
     const record = await Attendance.findOne({
       employeeId: employee._id,
       date: dateStr
     });
 
     console.log('📋 Found record:', record ? 'Yes' : 'No');
+    console.log('📋 Record date:', record?.date);
 
     res.json({
       success: true,
