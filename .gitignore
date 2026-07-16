@@ -41,23 +41,96 @@ backend/logs/
 backend/*.log
 
 # ============================================
+# 🚨 ALL SCRIPTS WITH PASSWORDS & SENSITIVE DATA
+# ============================================
+
+# Ignore entire scripts folder
+scripts/
+**/scripts/
+
+# All password-related scripts
+**/scripts/*password*.js
+**/scripts/*-password*.js
+**/scripts/reset-*.js
+**/scripts/update-*.js
+**/scripts/change-*.js
+**/scripts/create-*.js
+**/scripts/set-*.js
+**/scripts/fix-*.js
+**/scripts/debug-*.js
+**/scripts/test-*.js
+**/scripts/find-*.js
+**/scripts/link-*.js
+**/scripts/cleanup-*.js
+**/scripts/seed.js
+**/scripts/insert-*.js
+**/scripts/*-data.js
+**/scripts/add-*.js
+**/scripts/init-*.js
+**/scripts/migrate-*.js
+**/scripts/db-*.js
+
+# All scripts in root
+scripts/
+*.js
+!index.js
+!server.js
+!app.js
+
+# But keep these example/template files
+!**/scripts/*.example.js
+!**/scripts/*.template.js
+!**/scripts/*.sample.js
+
+# ============================================
+# DATABASE FILES & SCRIPTS
+# ============================================
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.mongodb
+*.dump
+*.sql
+backup-*.sql
+database-backup-*
+
+# MongoDB data directory
+data/
+db-data/
+mongodb-data/
+mongodb/
+*.bson
+*.json
+*.js
+
+# Database connection files (if they contain credentials)
+**/db.config.js
+**/database.config.js
+**/mongoose.config.js
+**/db.js
+!**/db.js.example
+
+# ============================================
 # FRONTEND SPECIFIC
 # ============================================
 frontend/node_modules/
 frontend/package-lock.json
 frontend/dist/
-
 frontend/vercel.json
-
 frontend/build/
 frontend/.env
 frontend/.env.local
 frontend/.vite/
 frontend/*.log
+frontend/.vercel/
 
 # ============================================
 # SECURITY FILES (CRITICAL!)
 # ============================================
+
+# SSL/TLS Certificates
 *.pem
 *.key
 *.crt
@@ -66,12 +139,50 @@ frontend/*.log
 *.pfx
 *.p8
 *.der
+
+# Certificate directories
 ssl/
 certificates/
 keys/
+certs/
+
+# Secrets directories
 secrets/
+.aws/
+.gcloud/
+.azure/
+
+# Java keystores
 *.jks
 *.keystore
+*.truststore
+
+# SSH keys
+*.pub
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+
+# ============================================
+# USER DATA & CREDENTIALS
+# ============================================
+
+# User data files
+users.json
+employees.json
+credentials.json
+passwords.json
+*.credentials.json
+*.secrets.json
+
+# Backup files
+*.bak
+*.old
+*.orig
+*.backup
+*.back
+*~
 
 # ============================================
 # SYSTEM FILES
@@ -89,6 +200,8 @@ desktop.ini
 *.njsproj
 *.sln
 *.sw?
+.ftpconfig
+.ftppass
 
 # ============================================
 # LOGS & TEMP FILES
@@ -104,43 +217,183 @@ lerna-debug.log*
 *.pid.lock
 tmp/
 temp/
+.cache/
+.parcel-cache/
 
 # ============================================
-# TESTING
+# TESTING & COVERAGE
 # ============================================
 coverage/
 .nyc_output/
 .cypress/
-*.test.js
-*.spec.js
-jest.config.js
-*.test.ts
-*.spec.ts
+cypress/videos/
+cypress/screenshots/
 __tests__/
 __mocks__/
+*.test.js
+*.spec.js
+*.test.ts
+*.spec.ts
+jest.config.js
 
 # ============================================
-# DOCKER (Optional - for AWS deployment)
+# DOCKER & CONTAINERS
 # ============================================
 *.dockerignore
 Dockerfile
 docker-compose*.yml
+docker-compose*.yaml
 .docker/
+docker/
+*.container
+*.image
 
 # ============================================
-# MISC
+# DEPLOYMENT PLATFORMS
+# ============================================
+.vercel/
+.railway/
+.aws/
+.gcloud/
+.azure/
+.gitlab/
+.heroku/
+.netlify/
+.vercel.json
+.railway.json
+.aws.json
+netlify.toml
+vercel.json
+railway.json
+
+# ============================================
+# MISC & COMPRESSED FILES
 # ============================================
 *.tgz
 *.gz
 *.zip
 *.rar
 *.7z
-.vite/
-.vercel/
-.netlify/
-.railway/
-.aws/
-*.local
-*.map
-*.d.ts
-vercel.json
+*.tar
+*.bz2
+*.xz
+
+# ============================================
+# CONFIGURATION FILES WITH POTENTIAL SECRETS
+# ============================================
+
+# Config files
+config.json
+*.config.json
+config.production.json
+config.development.json
+!config.example.json
+
+# YAML/XML configs
+config.yml
+config.yaml
+*.config.yml
+*.config.yaml
+!config.example.yml
+!config.example.yaml
+
+# JSON with data
+data.json
+seed.json
+*.seed.json
+!*.example.json
+
+# ============================================
+# APPLICATION-SPECIFIC FILES
+# ============================================
+
+# Employee Management System specific
+**/backend/uploads/
+**/backend/files/
+**/backend/public/uploads/
+**/backend/temp/
+**/backend/storage/
+
+# If you have any CSV/Excel files with employee data
+*.csv
+*.xlsx
+*.xls
+*.ods
+
+# Report files
+reports/
+*.report.pdf
+*.report.html
+*.report.docx
+
+# ============================================
+# ENVIRONMENT SPECIFIC (Keep examples)
+# ============================================
+
+# Allow example files
+!.env.example
+!.env.sample
+!.env.template
+
+# Allow sample config files
+!*.sample.js
+!*.example.js
+!*.template.js
+
+# ============================================
+# 🔐 API KEYS & TOKENS
+# ============================================
+
+# Token files
+*.token
+*.jwt
+*.apikey
+*.apikey.json
+
+# Service account files
+service-account.json
+service-account-key.json
+*.service-account.json
+*.service-account-key.json
+
+# Firebase
+firebase-service-account.json
+*.firebase.json
+firebase-credentials.json
+
+# Google Cloud
+*.gcloud-key.json
+*.gcp-key.json
+
+# AWS
+*.aws-key.json
+*.aws-credentials.json
+aws-config.json
+
+# ============================================
+# PASSWORD MANAGERS & SECURITY TOOLS
+# ============================================
+
+# GPG keys
+*.gpg
+*.pgp
+*.asc
+
+# Hash files
+*.hash
+*.hashed
+*.bcrypt
+*.argon2
+
+# ============================================
+# ADD ANY OTHER SENSITIVE FILES HERE
+# ============================================
+
+# Individual sensitive files (add as needed)
+# users-with-passwords.json
+# admin-credentials.js
+# employee-logins.js
+# database-credentials.js
+# mail-credentials.js
+# payment-credentials.js
+# api-keys.js
