@@ -242,6 +242,10 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToast } from 'vue-toastification'
 import api from '../api'
+const forceRefresh = () => {
+  const timestamp = new Date().getTime()
+}
+
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -323,6 +327,7 @@ const formatDateDisplay = (date: string) => {
 const loadTodayStatus = async () => {
   try {
     const response = await api.get('/api/attendance/today-status')
+    params: { _t: new Date().getTime() }
     if (response.data.success) {
       todayStatus.value = {
         status: response.data.status || 'not-marked',
