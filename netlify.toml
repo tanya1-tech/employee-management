@@ -6,6 +6,8 @@
 [build.environment]
   VITE_API_URL = "https://employee-management-9h80.onrender.com"
   NODE_VERSION = "18"
+  NPM_VERSION = "9"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 [[redirects]]
   from = "/*"
