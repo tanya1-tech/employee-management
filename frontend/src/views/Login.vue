@@ -120,4 +120,22 @@ const handleLogin = async () => {
     loading.value = false
   }
 }
+
+// In your Login.vue or login function
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+console.log('🔍 API URL:', API_URL);
+console.log('🔍 Full URL:', `${API_URL}/api/auth/login`);
+
+try {
+  const response = await axios.post(`${API_URL}/api/auth/login`, {
+    username: this.username,
+    password: this.password
+  });
+  console.log('✅ Response:', response.data);
+} catch (error) {
+  console.error('❌ Full error:', error);
+  console.error('❌ Request URL:', error.config?.url);
+  console.error('❌ Response status:', error.response?.status);
+  console.error('❌ Response data:', error.response?.data);
+}
 </script>
