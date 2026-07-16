@@ -241,7 +241,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToast } from 'vue-toastification'
-import api, { attendanceApi } from '../api'
+import api from '../api'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -297,7 +297,7 @@ const formatDateDisplay = (date: string) => {
 
 const loadTodayStatus = async () => {
   try {
-    const response = await attendanceApi.getTodayStatus()
+    const response = await api.get('/api/attendance/today-status')
     if (response.data.success) {
       todayStatus.value = {
         status: response.data.status || 'not-marked',
@@ -317,7 +317,7 @@ const handleCheckIn = async () => {
   if (checkInLoading.value || todayStatus.value.isCheckedIn) return
   checkInLoading.value = true
   try {
-    const response = await attendanceApi.checkIn()
+    const response = await api.post('/api/attendance/check-in')
     if (response.data.success) {
       toast.success(response.data.message)
       await loadTodayStatus()
@@ -334,7 +334,7 @@ const handleCheckOut = async () => {
   if (checkOutLoading.value || !todayStatus.value.isCheckedIn || todayStatus.value.isCheckedOut) return
   checkOutLoading.value = true
   try {
-    const response = await attendanceApi.checkOut()
+    const response = await api.post('/api/attendance/check-out')
     if (response.data.success) {
       toast.success(response.data.message)
       await loadTodayStatus()
@@ -350,7 +350,7 @@ const handleCheckOut = async () => {
 const loadAttendance = async () => {
   loading.value = true
   try {
-    const response = await api.get(`/attendance?date=${selectedDate.value}`)
+    const response = await api.get(`/api/attendance?date=${selectedDate.value}`)
     if (response.data.success) {
       attendanceRecords.value = response.data.attendance || []
       if (response.data.stats) {
@@ -373,9 +373,9 @@ const updateAttendance = async (record: any) => {
   try {
     if (record.status === 'not-marked') return
     if (record.attendanceId) {
-      await api.put(`/attendance/${record.attendanceId}`, { status: record.status, date: selectedDate.value })
+      await api.put(`/api/attendance/${record.attendanceId}`, { status: record.status, date: selectedDate.value })
     } else {
-      await api.post('/attendance', { employeeId: record._id, status: record.status, date: selectedDate.value })
+      await api.post('/api/attendance', { employeeId: record._id, status: record.status, date: selectedDate.value })
     }
     toast.success(`${record.employeeName} marked as ${record.status}`)
     await loadAttendance()
@@ -387,7 +387,7 @@ const updateAttendance = async (record: any) => {
 
 const exportCSV = async () => {
   try {
-    const response = await attendanceApi.exportCSV(selectedDate.value, selectedDate.value)
+    const response = await api.get(`/api/attendance/export?date=${selectedDate.value}`, { responseType: 'blob' })
     const blob = new Blob([response.data], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')

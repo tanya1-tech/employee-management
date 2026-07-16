@@ -249,11 +249,11 @@ const getStatusClass = (status: string) => {
 const loadEmployees = async () => {
   loading.value = true
   try {
-    const response = await api.get('/employees')
+    const response = await api.get('/api/employees')
     employees.value = response.data.employees || []
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to load employees:', error)
-    toast.error('Failed to load employees')
+    toast.error(error.response?.data?.message || 'Failed to load employees')
     employees.value = []
   } finally {
     loading.value = false
@@ -270,10 +270,10 @@ const saveEmployee = async () => {
   try {
     if (editingEmployee.value) {
       const id = editingEmployee.value._id || editingEmployee.value.id
-      await api.put(`/employees/${id}`, form.value)
+      await api.put(`/api/employees/${id}`, form.value)
       toast.success('Employee updated successfully')
     } else {
-      const response = await api.post('/employees', form.value)
+      const response = await api.post('/api/employees', form.value)
       
       if (response.data.loginCredentials) {
         newCredentials.value = response.data.loginCredentials
@@ -306,12 +306,12 @@ const deleteEmployee = async (id: string) => {
   if (!confirm('Are you sure you want to delete this employee?')) return
   
   try {
-    await api.delete(`/employees/${id}`)
+    await api.delete(`/api/employees/${id}`)
     toast.success('Employee deleted successfully')
     await loadEmployees()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete error:', error)
-    toast.error('Failed to delete employee')
+    toast.error(error.response?.data?.message || 'Failed to delete employee')
   }
 }
 
