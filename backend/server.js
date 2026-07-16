@@ -5,7 +5,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const connectDB = require('./config/db.js');
-
 const app = express();
 
 // Middleware
@@ -28,6 +27,7 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
+app.use('/auth', authRoutes);
 // Test route
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working!' });
