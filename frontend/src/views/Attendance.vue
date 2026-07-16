@@ -241,7 +241,6 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToast } from 'vue-toastification'
-// ✅ FIXED - Only import api
 import api from '../api'
 
 const router = useRouter()
@@ -254,11 +253,7 @@ const checkOutLoading = ref(false)
 const selectedDate = ref(new Date().toISOString().split('T')[0])
 const totalEmployees = ref(0)
 const attendanceRecords = ref<any[]>([])
-const stats = ref({
-  present: 0,
-  absent: 0,
-  late: 0,
-})
+const stats = ref({ present: 0, absent: 0, late: 0 })
 
 const todayStatus = ref({
   status: 'not-marked',
@@ -280,17 +275,12 @@ const getStatusClass = (status: string) => {
   return classes[status] || 'bg-gray-100 text-gray-500'
 }
 
-const getStatusBadgeClass = (status: string) => {
-  return getStatusClass(status)
-}
+const getStatusBadgeClass = (status: string) => getStatusClass(status)
 
 const formatTime = (date: string | null) => {
   if (!date) return '--:--'
   try {
-    return new Date(date).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    return new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
   } catch {
     return '--:--'
   }
@@ -299,12 +289,7 @@ const formatTime = (date: string | null) => {
 const formatDateDisplay = (date: string) => {
   if (!date) return 'Today'
   try {
-    return new Date(date).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+    return new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
   } catch {
     return 'Today'
   }
@@ -312,7 +297,6 @@ const formatDateDisplay = (date: string) => {
 
 const loadTodayStatus = async () => {
   try {
-    // ✅ Use api directly - NOT attendanceApi
     const response = await api.get('/attendance/today-status')
     if (response.data.success) {
       todayStatus.value = {
@@ -324,14 +308,13 @@ const loadTodayStatus = async () => {
         duration: response.data.duration || null,
       }
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to load today status:', error)
   }
 }
 
 const handleCheckIn = async () => {
   if (checkInLoading.value || todayStatus.value.isCheckedIn) return
-  
   checkInLoading.value = true
   try {
     const response = await api.post('/attendance/check-in')
@@ -341,7 +324,6 @@ const handleCheckIn = async () => {
       await loadAttendance()
     }
   } catch (error: any) {
-    console.error('Check-in error:', error)
     toast.error(error.response?.data?.message || 'Check-in failed')
   } finally {
     checkInLoading.value = false
@@ -350,7 +332,6 @@ const handleCheckIn = async () => {
 
 const handleCheckOut = async () => {
   if (checkOutLoading.value || !todayStatus.value.isCheckedIn || todayStatus.value.isCheckedOut) return
-  
   checkOutLoading.value = true
   try {
     const response = await api.post('/attendance/check-out')
@@ -360,7 +341,6 @@ const handleCheckOut = async () => {
       await loadAttendance()
     }
   } catch (error: any) {
-    console.error('Check-out error:', error)
     toast.error(error.response?.data?.message || 'Check-out failed')
   } finally {
     checkOutLoading.value = false
@@ -371,10 +351,8 @@ const loadAttendance = async () => {
   loading.value = true
   try {
     const response = await api.get(`/attendance?date=${selectedDate.value}`)
-    
     if (response.data.success) {
       attendanceRecords.value = response.data.attendance || []
-      
       if (response.data.stats) {
         stats.value = {
           present: response.data.stats.present || 0,
@@ -382,11 +360,9 @@ const loadAttendance = async () => {
           late: response.data.stats.late || 0,
         }
       }
-      
       totalEmployees.value = attendanceRecords.value.length
     }
   } catch (error: any) {
-    console.error('Failed to load attendance:', error)
     toast.error(error.response?.data?.message || 'Failed to load attendance')
   } finally {
     loading.value = false
@@ -395,30 +371,15 @@ const loadAttendance = async () => {
 
 const updateAttendance = async (record: any) => {
   try {
-    if (record.status === 'not-marked') {
-      return
-    }
-
-    const payload = {
-      employeeId: record._id,
-      status: record.status,
-      checkInTime: new Date(),
-      date: selectedDate.value,
-    }
-
+    if (record.status === 'not-marked') return
     if (record.attendanceId) {
-      await api.put(`/attendance/${record.attendanceId}`, {
-        status: record.status,
-        date: selectedDate.value,
-      })
+      await api.put(`/attendance/${record.attendanceId}`, { status: record.status, date: selectedDate.value })
     } else {
-      await api.post('/attendance', payload)
+      await api.post('/attendance', { employeeId: record._id, status: record.status, date: selectedDate.value })
     }
-    
     toast.success(`${record.employeeName} marked as ${record.status}`)
     await loadAttendance()
   } catch (error: any) {
-    console.error('Update error:', error)
     toast.error(error.response?.data?.message || 'Failed to update attendance')
     await loadAttendance()
   }
@@ -426,12 +387,7 @@ const updateAttendance = async (record: any) => {
 
 const exportCSV = async () => {
   try {
-    toast.info('Generating CSV...')
-    
-    const response = await api.get(`/attendance/export?startDate=${selectedDate.value}&endDate=${selectedDate.value}`, {
-      responseType: 'blob'
-    })
-    
+    const response = await api.get(`/attendance/export?date=${selectedDate.value}`, { responseType: 'blob' })
     const blob = new Blob([response.data], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -441,10 +397,8 @@ const exportCSV = async () => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    
     toast.success('CSV exported successfully!')
   } catch (error: any) {
-    console.error('Export error:', error)
     toast.error(error.response?.data?.message || 'Failed to export CSV')
   }
 }
