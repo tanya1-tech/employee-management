@@ -1,51 +1,51 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { createRouter, createWebHistory } from 'vue-router'
+import App from './App.vue'
+import router from './router'  // ✅ Import router
+import { useAuthStore } from './stores/auth'
+import axios from 'axios'
 import Toast from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
+
+// Import styles
 import './style.css'
-import App from './App.vue'
-
-const routes = [
-  { path: '/', redirect: '/login' },
-  { path: '/login', component: () => import('./views/Login.vue') },
-  { path: '/dashboard', component: () => import('./views/Dashboard.vue'), meta: { requiresAuth: true } },
-  { path: '/employees', component: () => import('./views/Employees.vue'), meta: { requiresAuth: true, hrOnly: true } },
-  { path: '/attendance', component: () => import('./views/Attendance.vue'), meta: { requiresAuth: true } },
-  { path: '/profile', component: () => import('./views/Profile.vue'), meta: { requiresAuth: true } },
-]
-
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-})
-
-// Navigation Guard
-router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
-
-  if (to.meta.requiresAuth && !token) {
-    next('/login')
-    return
-  }
-
-  if (to.meta.hrOnly && user.role !== 'hr') {
-    next('/dashboard')
-    return
-  }
-
-  if (to.path === '/login' && token) {
-    next('/dashboard')
-    return
-  }
-
-  next()
-})
 
 const app = createApp(App)
-app.use(createPinia())
-app.use(router)
-app.use(Toast)
+const pinia = createPinia()
+
+app.use(pinia)
+app.use(router)  // ✅ Use router
+
+// Toast configuration
+const toastOptions = {
+  position: 'top-right',
+  timeout: 3000,
+  closeOnClick: true,
+  pauseOnFocusLoss: true,
+  pauseOnHover: true,
+  draggable: true,
+  draggablePercent: 0.6,
+  showCloseButtonOnHover: false,
+  hideProgressBar: false,
+  closeButton: 'button',
+  icon: true,
+  rtl: false
+}
+
+app.use(Toast, toastOptions)
+
+// Initialize auth store
+const authStore = useAuthStore()
+authStore.initAuth()
+
+// Set axios base URL
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+axios.defaults.baseURL = API_URL
+
+// Add token to all requests if available
+const token = localStorage.getItem('token')
+if (token) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+}
 
 app.mount('#app')

@@ -42,6 +42,29 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    // ✅ CHECK AUTH - FIXES THE BLANK DASHBOARD
+    checkAuth(): boolean {
+      const token = localStorage.getItem('token')
+      const user = localStorage.getItem('user')
+      
+      if (token && user) {
+        try {
+          this.token = token
+          this.user = JSON.parse(user)
+          this.isAuthenticated = true
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+          return true
+        } catch (error) {
+          console.error('Error parsing user data:', error)
+          this.logout()
+          return false
+        }
+      }
+      
+      this.logout()
+      return false
+    },
+
     async login(credentials: LoginCredentials): Promise<LoginResponse> {
       this.loading = true
       this.error = null
@@ -84,16 +107,13 @@ export const useAuthStore = defineStore('auth', {
         let message = 'An error occurred during login'
         
         if (error.response) {
-          // Server responded with error
           console.error('❌ Response status:', error.response.status)
           console.error('❌ Response data:', error.response.data)
           message = error.response.data?.message || 'Invalid credentials'
         } else if (error.request) {
-          // No response from server
           console.error('❌ No response from server')
           message = 'Cannot connect to server. Please check if backend is running.'
         } else {
-          // Other errors
           message = error.message || 'An error occurred'
         }
         
@@ -177,7 +197,6 @@ export const useAuthStore = defineStore('auth', {
       delete axios.defaults.headers.common['Authorization']
     },
 
-    // Initialize auth state from localStorage
     initAuth() {
       const token = localStorage.getItem('token')
       const user = localStorage.getItem('user')
@@ -195,7 +214,6 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    // Fetch current user from server
     async fetchCurrentUser() {
       try {
         const token = this.token || localStorage.getItem('token')
