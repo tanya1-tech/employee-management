@@ -1,9 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-// Import views - use direct imports for now to avoid loading issues
+// Import views
 import Login from '../views/Login.vue'
 import Dashboard from '../views/Dashboard.vue'
+import Profile from '../views/Profile.vue'
+import Employees from '../views/Employees.vue'
+import Attendance from '../views/Attendance.vue'
 
 const routes = [
   {
@@ -23,6 +26,24 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/employees',
+    name: 'Employees',
+    component: Employees,
+    meta: { requiresAuth: true, role: 'hr' }
+  },
+  {
+    path: '/attendance',
+    name: 'Attendance',
+    component: Attendance,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/dashboard'
   }
@@ -36,22 +57,22 @@ const router = createRouter({
 // Navigation guard
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  console.log('🔍 Router guard checking auth...')
-  
-  // Check authentication
   const isAuthenticated = authStore.checkAuth()
-  console.log('🔍 Is authenticated:', isAuthenticated)
   
-  // If route requires auth and user is not authenticated
   if (to.meta.requiresAuth && !isAuthenticated) {
-    console.log('❌ Not authenticated, redirecting to login')
     next('/login')
     return
   }
   
-  // If already logged in and trying to go to login page
+  if (to.meta.role && isAuthenticated) {
+    const userRole = authStore.user?.role
+    if (to.meta.role !== userRole) {
+      next('/dashboard')
+      return
+    }
+  }
+  
   if (to.path === '/login' && isAuthenticated) {
-    console.log('✅ Already logged in, redirecting to dashboard')
     next('/dashboard')
     return
   }
