@@ -1,7 +1,7 @@
 const Employee = require('../models/Employee.model');
 const User = require('../models/User.model');
 const Attendance = require('../models/Attendance.model');
-const bcrypt = require('bcryptjs');
+
 
 // Get all employees
 exports.getEmployees = async (req, res) => {
