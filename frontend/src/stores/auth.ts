@@ -42,8 +42,9 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    // ✅ CHECK AUTH - FIXES THE BLANK DASHBOARD
+    // ✅ ADD THIS METHOD - FIXES THE BLANK DASHBOARD
     checkAuth(): boolean {
+      console.log('🔍 checkAuth called')
       const token = localStorage.getItem('token')
       const user = localStorage.getItem('user')
       
@@ -53,6 +54,7 @@ export const useAuthStore = defineStore('auth', {
           this.user = JSON.parse(user)
           this.isAuthenticated = true
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+          console.log('✅ checkAuth successful for:', this.user?.username)
           return true
         } catch (error) {
           console.error('Error parsing user data:', error)
@@ -61,6 +63,7 @@ export const useAuthStore = defineStore('auth', {
         }
       }
       
+      console.log('❌ checkAuth failed - no token or user')
       this.logout()
       return false
     },

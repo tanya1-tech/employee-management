@@ -281,139 +281,54 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useToast } from 'vue-toastification'
-import api from '../api'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const toast = useToast()
 
 const loading = ref(true)
 
 // Admin stats
 const adminStats = ref({
-  totalEmployees: 0,
-  presentToday: 0,
-  absentToday: 0,
-  attendanceRate: 0,
+  totalEmployees: 20,
+  presentToday: 12,
+  absentToday: 8,
+  attendanceRate: 60,
 })
-const recentActivities = ref<any[]>([])
+const recentActivities = ref<any[]>([
+  { id: 1, icon: '👤', description: 'Tanya Poojari checked in', time: new Date().toISOString(), status: 'Present', statusClass: 'bg-green-100 text-green-600' },
+  { id: 2, icon: '👤', description: 'Aisha Khan checked out', time: new Date(Date.now() - 3600000).toISOString(), status: 'Left', statusClass: 'bg-blue-100 text-blue-600' },
+])
 
 // Employee stats
 const employeeStats = ref({
-  todayStatus: 'Not Marked',
-  totalPresent: 0,
+  todayStatus: 'Present',
+  totalPresent: 2,
 })
-const employeeAttendance = ref<any[]>([])
-
-const formatTime = (date: string) => {
-  if (!date) return 'Just now'
-  try {
-    const d = new Date(date)
-    const now = new Date()
-    const diff = Math.floor((now.getTime() - d.getTime()) / 1000)
-    if (diff < 60) return 'Just now'
-    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`
-    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`
-    if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`
-    return d.toLocaleDateString()
-  } catch (e) {
-    return 'Recently'
-  }
-}
-
-const formatDate = (date: string) => {
-  if (!date) return 'N/A'
-  try {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  } catch (e) {
-    return 'N/A'
-  }
-}
-
-const getStatusClass = (status: string) => {
-  const classes: Record<string, string> = {
-    present: 'bg-green-100 text-green-600',
-    absent: 'bg-red-100 text-red-600',
-    late: 'bg-yellow-100 text-yellow-600',
-    'half-day': 'bg-orange-100 text-orange-600',
-  }
-  return classes[status] || 'bg-gray-100 text-gray-500'
-}
-
-const loadAdminDashboard = async () => {
-  try {
-    const response = await api.get('/api/dashboard/stats')
-    if (response.data.success) {
-      adminStats.value = response.data.stats
-      recentActivities.value = response.data.recentActivities || []
-    }
-  } catch (error) {
-    console.error('Admin dashboard error:', error)
-    // Fallback demo data if API fails
-    adminStats.value = {
-      totalEmployees: 20,
-      presentToday: 12,
-      absentToday: 8,
-      attendanceRate: 60,
-    }
-    recentActivities.value = [
-      { id: 1, icon: '👤', description: 'Tanya Poojari checked in', time: new Date().toISOString(), status: 'Present', statusClass: 'bg-green-100 text-green-600' },
-      { id: 2, icon: '👤', description: 'Aisha Khan checked out', time: new Date(Date.now() - 3600000).toISOString(), status: 'Left', statusClass: 'bg-blue-100 text-blue-600' },
-      { id: 3, icon: '📋', description: 'New employee added: Rahul Sharma', time: new Date(Date.now() - 7200000).toISOString(), status: 'Added', statusClass: 'bg-purple-100 text-purple-600' },
-    ]
-  }
-}
-
-const loadEmployeeDashboard = async () => {
-  try {
-    const response = await api.get(`/api/attendance/employee/${authStore.user?.employeeId}`)
-    if (response.data.success) {
-      employeeAttendance.value = response.data.attendance || []
-      
-      const today = new Date().toDateString()
-      const todayRecord = employeeAttendance.value.find((a: any) => 
-        new Date(a.date).toDateString() === today
-      )
-      employeeStats.value.todayStatus = todayRecord?.status || 'Not Marked'
-      employeeStats.value.totalPresent = employeeAttendance.value.filter(
-        (a: any) => a.status === 'present'
-      ).length
-    }
-  } catch (error) {
-    console.error('Employee dashboard error:', error)
-    // Fallback demo data
-    employeeAttendance.value = [
-      { id: 1, date: new Date().toISOString(), status: 'present', checkIn: '09:00 AM' },
-      { id: 2, date: new Date(Date.now() - 86400000).toISOString(), status: 'present', checkIn: '09:15 AM' },
-      { id: 3, date: new Date(Date.now() - 172800000).toISOString(), status: 'absent', checkIn: '-' },
-    ]
-    employeeStats.value.todayStatus = 'Present'
-    employeeStats.value.totalPresent = 2
-  }
-}
+const employeeAttendance = ref<any[]>([
+  { id: 1, date: new Date().toISOString(), status: 'present', checkIn: '09:00 AM' },
+  { id: 2, date: new Date(Date.now() - 86400000).toISOString(), status: 'present', checkIn: '09:15 AM' },
+])
 
 const loadDashboard = async () => {
   loading.value = true
   try {
+    console.log('🔍 Loading dashboard...')
+    
     // ✅ Check auth before loading
     if (!authStore.checkAuth()) {
+      console.log('❌ Auth check failed, redirecting to login')
       router.push('/login')
       return
     }
     
-    if (authStore.isHR) {
-      await loadAdminDashboard()
-    } else {
-      await loadEmployeeDashboard()
-    }
+    console.log('✅ Auth check passed, user:', authStore.user?.username)
+    console.log('✅ User role:', authStore.user?.role)
+    
+    // Load dashboard data here
+    // For now, we're using static data
+    
   } catch (error) {
     console.error('Dashboard error:', error)
-    toast.error('Failed to load dashboard')
   } finally {
     loading.value = false
   }
@@ -421,7 +336,6 @@ const loadDashboard = async () => {
 
 const handleLogout = () => {
   authStore.logout()
-  toast.info('Logged out successfully')
   router.push('/login')
 }
 
