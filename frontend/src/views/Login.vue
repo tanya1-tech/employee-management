@@ -83,7 +83,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToast } from 'vue-toastification'
-
+import axios from 'axios';
 const router = useRouter()
 const authStore = useAuthStore()
 const toast = useToast()
