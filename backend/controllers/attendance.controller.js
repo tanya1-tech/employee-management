@@ -551,6 +551,10 @@ exports.checkOut = async (req, res) => {
   }
 };
 
+// Use local date instead of UTC
+const today = new Date();
+const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
 // ============================================
 // GET TODAY'S STATUS (Check-in/out status)
 // ============================================
