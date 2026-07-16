@@ -254,35 +254,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
-const router = useRouter()
-const authStore = useAuthStore()
-
-const loading = ref(true)
-
-// Admin stats
-const adminStats = ref({
-  totalEmployees: 20,
-  presentToday: 12,
-  absentToday: 8,
-  attendanceRate: 60,
-})
-const recentActivities = ref<any[]>([
-  { id: 1, icon: '👤', description: 'Tanya Poojari checked in', time: new Date().toISOString(), status: 'Present', statusClass: 'bg-green-100 text-green-600' },
-  { id: 2, icon: '👤', description: 'Aisha Khan checked out', time: new Date(Date.now() - 3600000).toISOString(), status: 'Left', statusClass: 'bg-blue-100 text-blue-600' },
-])
-
-// Employee stats
-const employeeStats = ref({
-  todayStatus: 'Present',
-  totalPresent: 2,
-})
-const employeeAttendance = ref<any[]>([
-  { id: 1, date: new Date().toISOString(), status: 'present', checkIn: '09:00 AM' },
-  { id: 2, date: new Date(Date.now() - 86400000).toISOString(), status: 'present', checkIn: '09:15 AM' },
-])
-
-// ✅ Helper functions - defined as functions that return values
-function formatTime(date: string) {
+// 1️⃣ FIRST: Define all helper functions
+const formatTime = (date: string) => {
   if (!date) return 'Just now'
   try {
     const d = new Date(date)
@@ -298,7 +271,7 @@ function formatTime(date: string) {
   }
 }
 
-function formatDate(date: string) {
+const formatDate = (date: string) => {
   if (!date) return 'N/A'
   try {
     return new Date(date).toLocaleDateString('en-US', {
@@ -311,7 +284,7 @@ function formatDate(date: string) {
   }
 }
 
-function getStatusClass(status: string) {
+const getStatusClass = (status: string) => {
   const classes: Record<string, string> = {
     present: 'bg-green-100 text-green-600',
     absent: 'bg-red-100 text-red-600',
@@ -321,36 +294,31 @@ function getStatusClass(status: string) {
   return classes[status] || 'bg-gray-100 text-gray-500'
 }
 
-const loadAdminDashboard = async () => {
-  // Using static data for now
-  console.log('Loading admin dashboard...')
-}
+// 2️⃣ SECOND: Define refs and reactive data
+const router = useRouter()
+const authStore = useAuthStore()
+const loading = ref(true)
 
-const loadEmployeeDashboard = async () => {
-  // Using static data for now
-  console.log('Loading employee dashboard...')
-}
+const adminStats = ref({
+  totalEmployees: 20,
+  presentToday: 12,
+  absentToday: 8,
+  attendanceRate: 60,
+})
 
+const recentActivities = ref<any[]>([
+  { id: 1, icon: '👤', description: 'Tanya Poojari checked in', time: new Date().toISOString(), status: 'Present', statusClass: 'bg-green-100 text-green-600' },
+  { id: 2, icon: '👤', description: 'Aisha Khan checked out', time: new Date(Date.now() - 3600000).toISOString(), status: 'Left', statusClass: 'bg-blue-100 text-blue-600' },
+])
+
+// 3️⃣ THIRD: Define functions that use refs
 const loadDashboard = async () => {
   loading.value = true
   try {
-    console.log('🔍 Loading dashboard...')
-    
     if (!authStore.checkAuth()) {
-      console.log('❌ Auth check failed, redirecting to login')
       router.push('/login')
       return
     }
-    
-    console.log('✅ Auth check passed, user:', authStore.user?.username)
-    console.log('✅ User role:', authStore.user?.role)
-    
-    if (authStore.isHR) {
-      await loadAdminDashboard()
-    } else {
-      await loadEmployeeDashboard()
-    }
-    
   } catch (error) {
     console.error('Dashboard error:', error)
   } finally {
@@ -363,6 +331,7 @@ const handleLogout = () => {
   router.push('/login')
 }
 
+// 4️⃣ LAST: Lifecycle hooks
 onMounted(() => {
   loadDashboard()
 })
