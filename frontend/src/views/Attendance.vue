@@ -289,22 +289,36 @@ const formatTime = (date: string | null) => {
 const formatDateDisplay = (date: string) => {
   if (!date) return 'Today'
   try {
-    return new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    return new Date(date).toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
   } catch {
     return 'Today'
   }
 }
 
+// ✅ FIXED: Check if record is from today
 const loadTodayStatus = async () => {
   try {
     const response = await api.get('/api/attendance/today-status')
     if (response.data.success) {
+      const today = new Date()
+      const todayStr = today.toDateString()
+      
+      // Check if the record date is today
+      const recordDate = response.data.date ? new Date(response.data.date).toDateString() : null
+      const isToday = recordDate === todayStr
+      
       todayStatus.value = {
         status: response.data.status || 'not-marked',
         checkInTime: response.data.checkInTime ? formatTime(response.data.checkInTime) : null,
         checkOutTime: response.data.checkOutTime ? formatTime(response.data.checkOutTime) : null,
-        isCheckedIn: response.data.isCheckedIn || false,
-        isCheckedOut: response.data.isCheckedOut || false,
+        // ✅ Only enable buttons if record is from TODAY
+        isCheckedIn: isToday && (response.data.isCheckedIn || false),
+        isCheckedOut: isToday && (response.data.isCheckedOut || false),
         duration: response.data.duration || null,
       }
     }
@@ -315,6 +329,7 @@ const loadTodayStatus = async () => {
 
 const handleCheckIn = async () => {
   if (checkInLoading.value || todayStatus.value.isCheckedIn) return
+  
   checkInLoading.value = true
   try {
     const response = await api.post('/api/attendance/check-in')
@@ -332,6 +347,7 @@ const handleCheckIn = async () => {
 
 const handleCheckOut = async () => {
   if (checkOutLoading.value || !todayStatus.value.isCheckedIn || todayStatus.value.isCheckedOut) return
+  
   checkOutLoading.value = true
   try {
     const response = await api.post('/api/attendance/check-out')
@@ -373,9 +389,16 @@ const updateAttendance = async (record: any) => {
   try {
     if (record.status === 'not-marked') return
     if (record.attendanceId) {
-      await api.put(`/api/attendance/${record.attendanceId}`, { status: record.status, date: selectedDate.value })
+      await api.put(`/api/attendance/${record.attendanceId}`, { 
+        status: record.status, 
+        date: selectedDate.value 
+      })
     } else {
-      await api.post('/api/attendance', { employeeId: record._id, status: record.status, date: selectedDate.value })
+      await api.post('/api/attendance', { 
+        employeeId: record._id, 
+        status: record.status, 
+        date: selectedDate.value 
+      })
     }
     toast.success(`${record.employeeName} marked as ${record.status}`)
     await loadAttendance()
@@ -387,7 +410,9 @@ const updateAttendance = async (record: any) => {
 
 const exportCSV = async () => {
   try {
-    const response = await api.get(`/api/attendance/export?date=${selectedDate.value}`, { responseType: 'blob' })
+    const response = await api.get(`/api/attendance/export?date=${selectedDate.value}`, { 
+      responseType: 'blob' 
+    })
     const blob = new Blob([response.data], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')

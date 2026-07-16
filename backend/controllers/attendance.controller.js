@@ -560,92 +560,44 @@ const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(
 // ============================================
 exports.getTodayStatus = async (req, res) => {
   try {
-    let employee;
-    
-    console.log('🔍 Getting today status for user:', req.user.id, 'role:', req.user.role);
-    
-    // Find employee - works for both HR and Employee
-    employee = await Employee.findOne({ userId: req.user.id });
-    
-    if (!employee && req.user.employeeId) {
-      employee = await Employee.findOne({ employeeId: req.user.employeeId });
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
-    
-    if (!employee && req.user.email) {
-      employee = await Employee.findOne({ email: req.user.email });
-    }
-    
-    // If HR is checking for someone else
-    if (!employee && req.user.role === 'hr' && req.query.employeeId) {
-      employee = await Employee.findById(req.query.employeeId);
-      if (!employee) {
-        employee = await Employee.findOne({ employeeId: req.query.employeeId });
-      }
-    }
-    
+
+    // Get today's date range
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+    const employee = await Employee.findOne({ userId });
     if (!employee) {
-      console.log('❌ Employee not found for user:', req.user.id);
       return res.json({
         success: true,
         status: 'not-marked',
-        message: 'Employee profile not found',
         isCheckedIn: false,
         isCheckedOut: false,
-        checkInTime: null,
-        checkOutTime: null,
-        duration: null
+        date: null,
       });
     }
-
-    console.log('✅ Employee found:', employee.name, employee.employeeId);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
 
     const record = await Attendance.findOne({
       employeeId: employee._id,
-      date: { $gte: today, $lt: tomorrow }
+      date: { $gte: startOfDay, $lt: endOfDay }
     });
-
-    if (!record) {
-      return res.json({
-        success: true,
-        status: 'not-marked',
-        message: 'Not checked in today',
-        isCheckedIn: false,
-        isCheckedOut: false,
-        checkInTime: null,
-        checkOutTime: null,
-        duration: null
-      });
-    }
-
-    let duration = null;
-    if (record.checkInTime && record.checkOutTime) {
-      const diff = new Date(record.checkOutTime).getTime() - new Date(record.checkInTime).getTime();
-      duration = {
-        hours: Math.floor(diff / (1000 * 60 * 60)),
-        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      };
-    }
 
     res.json({
       success: true,
-      status: record.status || 'not-marked',
-      checkInTime: record.checkInTime,
-      checkOutTime: record.checkOutTime,
-      isCheckedIn: !!record.checkInTime,
-      isCheckedOut: !!record.checkOutTime,
-      duration: duration
+      status: record?.status || 'not-marked',
+      checkInTime: record?.checkInTime || null,
+      checkOutTime: record?.checkOutTime || null,
+      isCheckedIn: !!record?.checkInTime,
+      isCheckedOut: !!record?.checkOutTime,
+      duration: record?.duration || null,
+      date: record?.date || null,
     });
   } catch (error) {
-    console.error('❌ Get today status error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
