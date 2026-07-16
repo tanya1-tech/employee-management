@@ -179,8 +179,7 @@
 
           <!-- Employee Dashboard -->
           <div v-else>
-            <!-- Employee Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500 hover:shadow-md transition">
                 <div class="flex items-center justify-between">
                   <div>
@@ -222,7 +221,6 @@
               </div>
             </div>
 
-            <!-- My Information -->
             <div class="bg-white rounded-xl shadow-sm p-6">
               <h2 class="text-lg font-semibold text-gray-800 mb-4">My Information</h2>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -241,32 +239,6 @@
                 <div class="border-b border-gray-100 pb-3">
                   <p class="text-sm text-gray-500">Role</p>
                   <p class="font-medium text-gray-800">{{ authStore.user?.role?.toUpperCase() || 'N/A' }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- My Recent Attendance -->
-            <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
-              <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-gray-800">My Recent Attendance</h2>
-                <button @click="loadEmployeeDashboard" class="text-sm text-blue-600 hover:text-blue-800 transition">🔄 Refresh</button>
-              </div>
-              
-              <div v-if="employeeAttendance.length === 0" class="text-center py-8 text-gray-500">
-                <p class="text-4xl mb-2">📭</p>
-                <p>No attendance records yet</p>
-              </div>
-              
-              <div v-else class="space-y-3">
-                <div v-for="record in employeeAttendance.slice(0, 5)" :key="record.id" 
-                     class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                  <div class="flex items-center space-x-3">
-                    <span class="text-sm text-gray-500">{{ formatDate(record.date) }}</span>
-                    <span class="px-2 py-1 text-xs rounded-full" :class="getStatusClass(record.status)">
-                      {{ record.status }}
-                    </span>
-                  </div>
-                  <span class="text-xs text-gray-500">{{ record.checkIn || '-' }}</span>
                 </div>
               </div>
             </div>
@@ -309,12 +281,61 @@ const employeeAttendance = ref<any[]>([
   { id: 2, date: new Date(Date.now() - 86400000).toISOString(), status: 'present', checkIn: '09:15 AM' },
 ])
 
+// ✅ Helper functions - defined as functions that return values
+function formatTime(date: string) {
+  if (!date) return 'Just now'
+  try {
+    const d = new Date(date)
+    const now = new Date()
+    const diff = Math.floor((now.getTime() - d.getTime()) / 1000)
+    if (diff < 60) return 'Just now'
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`
+    if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`
+    return d.toLocaleDateString()
+  } catch (e) {
+    return 'Recently'
+  }
+}
+
+function formatDate(date: string) {
+  if (!date) return 'N/A'
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
+  } catch (e) {
+    return 'N/A'
+  }
+}
+
+function getStatusClass(status: string) {
+  const classes: Record<string, string> = {
+    present: 'bg-green-100 text-green-600',
+    absent: 'bg-red-100 text-red-600',
+    late: 'bg-yellow-100 text-yellow-600',
+    'half-day': 'bg-orange-100 text-orange-600',
+  }
+  return classes[status] || 'bg-gray-100 text-gray-500'
+}
+
+const loadAdminDashboard = async () => {
+  // Using static data for now
+  console.log('Loading admin dashboard...')
+}
+
+const loadEmployeeDashboard = async () => {
+  // Using static data for now
+  console.log('Loading employee dashboard...')
+}
+
 const loadDashboard = async () => {
   loading.value = true
   try {
     console.log('🔍 Loading dashboard...')
     
-    // ✅ Check auth before loading
     if (!authStore.checkAuth()) {
       console.log('❌ Auth check failed, redirecting to login')
       router.push('/login')
@@ -324,8 +345,11 @@ const loadDashboard = async () => {
     console.log('✅ Auth check passed, user:', authStore.user?.username)
     console.log('✅ User role:', authStore.user?.role)
     
-    // Load dashboard data here
-    // For now, we're using static data
+    if (authStore.isHR) {
+      await loadAdminDashboard()
+    } else {
+      await loadEmployeeDashboard()
+    }
     
   } catch (error) {
     console.error('Dashboard error:', error)
