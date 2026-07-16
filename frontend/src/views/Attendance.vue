@@ -241,7 +241,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToast } from 'vue-toastification'
-import api, { attendanceApi } from '../api'
+// ✅ FIXED - Only import api
+import api from '../api'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -311,7 +312,8 @@ const formatDateDisplay = (date: string) => {
 
 const loadTodayStatus = async () => {
   try {
-    const response = await attendanceApi.getTodayStatus()
+    // ✅ Use api directly - NOT attendanceApi
+    const response = await api.get('/attendance/today-status')
     if (response.data.success) {
       todayStatus.value = {
         status: response.data.status || 'not-marked',
@@ -332,7 +334,7 @@ const handleCheckIn = async () => {
   
   checkInLoading.value = true
   try {
-    const response = await attendanceApi.checkIn()
+    const response = await api.post('/attendance/check-in')
     if (response.data.success) {
       toast.success(response.data.message)
       await loadTodayStatus()
@@ -351,7 +353,7 @@ const handleCheckOut = async () => {
   
   checkOutLoading.value = true
   try {
-    const response = await attendanceApi.checkOut()
+    const response = await api.post('/attendance/check-out')
     if (response.data.success) {
       toast.success(response.data.message)
       await loadTodayStatus()
@@ -426,7 +428,9 @@ const exportCSV = async () => {
   try {
     toast.info('Generating CSV...')
     
-    const response = await attendanceApi.exportCSV(selectedDate.value, selectedDate.value)
+    const response = await api.get(`/attendance/export?startDate=${selectedDate.value}&endDate=${selectedDate.value}`, {
+      responseType: 'blob'
+    })
     
     const blob = new Blob([response.data], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
